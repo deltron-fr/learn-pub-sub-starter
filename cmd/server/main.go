@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	_, _, err = pubsub.DeclareAndBind(conn, routing.ExchangePerilTopic, routing.GameLogSlug, "game_logs.*", pubsub.Durable)
+	_, _, err = pubsub.DeclareAndBind(conn, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.Durable)
 	if err != nil {
 		log.Printf("could not create bind topic exchange: %v", err)
 		return
@@ -47,12 +47,12 @@ func main() {
 			fmt.Println("Sending pause message!")
 
 			err = pubsub.PublishJSON(
-				rmqCh, 
-				routing.ExchangePerilDirect, 
-				routing.PauseKey, 
+				rmqCh,
+				routing.ExchangePerilDirect,
+				routing.PauseKey,
 				routing.PlayingState{
 					IsPaused: true,
-					},
+				},
 			)
 
 			if err != nil {
@@ -62,11 +62,11 @@ func main() {
 			fmt.Println("Sending resume message!")
 
 			err = pubsub.PublishJSON(
-			rmqCh, 
-			routing.ExchangePerilDirect, 
-			routing.PauseKey, 
-			routing.PlayingState{
-				IsPaused: false,
+				rmqCh,
+				routing.ExchangePerilDirect,
+				routing.PauseKey,
+				routing.PlayingState{
+					IsPaused: false,
 				},
 			)
 
