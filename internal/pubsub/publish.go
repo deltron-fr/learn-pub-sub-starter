@@ -16,9 +16,9 @@ func PublishJSON[T any](ch *amqp.Channel, exchange, key string, val T) error {
 	}
 
 	err = ch.PublishWithContext(context.Background(), exchange, key, false, false,
-	 					amqp.Publishing{
-							ContentType: "application/json",
-							Body: jsonBytes})
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        jsonBytes})
 	if err != nil {
 		log.Printf("error publishing message to the exchange")
 		return err

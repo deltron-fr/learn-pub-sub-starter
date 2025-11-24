@@ -31,19 +31,27 @@ func main() {
 
 	queueName := fmt.Sprintf("%s.%s", routing.PauseKey, userName)
 
-	_, _, err = pubsub.DeclareAndBind(
-			conn, 
-			routing.ExchangePerilDirect, 
-			queueName, 
-			routing.PauseKey,
-			pubsub.Transient)
-	
+	_, queue, err := pubsub.DeclareAndBind(
+		conn,
+		routing.ExchangePerilDirect,
+		queueName,
+		routing.PauseKey,
+		pubsub.Transient)
+
 	if err != nil {
 		log.Printf("error creating queue: %v", err)
 		return
 	}
 
 	gameState := gamelogic.NewGameState(userName)
+	pubsub.SubscribeJSON(
+		conn, 
+		routing.ExchangePerilDirect,
+		queue.Name,
+		routing.PauseKey+userName,
+		pubsub.Transient,
+		handlerPause(gameState), 
+		)	
 
 	for {
 		words := gamelogic.GetInput()
@@ -58,7 +66,6 @@ func main() {
 			if err != nil {
 				log.Printf("%v", err)
 			}
-			fmt.Println("unit has been moved successfully")
 		case "status":
 			gameState.CommandStatus()
 		case "help":

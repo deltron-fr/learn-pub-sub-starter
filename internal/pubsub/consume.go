@@ -1,7 +1,8 @@
 package pubsub
 
 import (
-	"fmt"
+	"encoding/json"
+	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -13,8 +14,6 @@ const (
 	Transient
 )
 
-
-
 func DeclareAndBind(
 	conn *amqp.Connection,
 	exchange,
@@ -24,7 +23,6 @@ func DeclareAndBind(
 ) (*amqp.Channel, amqp.Queue, error) {
 	subCh, err := conn.Channel()
 	if err != nil {
-		fmt.Println("Error creating channel")
 		return nil, amqp.Queue{}, err
 	}
 
@@ -42,15 +40,49 @@ func DeclareAndBind(
 
 	queue, err := subCh.QueueDeclare(queueName, durableBool, autoDelete, exclusive, false, nil)
 	if err != nil {
-		fmt.Println("Error declaring queue")
 		return nil, amqp.Queue{}, err
 	}
 
-	err = subCh.QueueBind(queueName, key, exchange, false, nil)
+	err = subCh.QueueBind(queue.Name, key, exchange, false, nil)
 	if err != nil {
-		fmt.Println("Error binding queue")
 		return nil, amqp.Queue{}, err
 	}
 
 	return subCh, queue, nil
 }
+
+func SubscribeJSON[T any](
+	conn *amqp.Connection,
+	exchange,
+	queueName,
+	key string,
+	queueType SimpleQueueType, // an enum to represent "durable" or "transient"
+	handler func(T),
+) error {
+	subCh, queue, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
+	if err != nil {
+		return err
+	}
+
+	ch, err := subCh.Consume(queue.Name, "", false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for val := range ch {
+			var t T
+			err := json.Unmarshal(val.Body, &t)
+			if err != nil {
+				log.Printf("error unmarshalling message")
+				return
+			}
+			handler(t)
+			val.Ack(false)
+		}
+	}()
+
+	return nil
+}
+
+
