@@ -47,16 +47,16 @@ func main() {
 		log.Printf("error creating queue: %v", err)
 		return
 	}
-	
+
 	gameState := gamelogic.NewGameState(userName)
 	err = pubsub.SubscribeJSON(
-		conn, 
+		conn,
 		routing.ExchangePerilDirect,
 		queue.Name,
 		queueName,
 		pubsub.Transient,
-		handlerPause(gameState), 
-		)
+		handlerPause(gameState),
+	)
 	if err != nil {
 		log.Printf("error subscribing to pause: %v", err)
 		return
@@ -68,10 +68,23 @@ func main() {
 		"army_moves."+userName,
 		"army_moves.*",
 		pubsub.Transient,
-		handlerMove(gameState),
+		handlerMove(gameState, rmqCh),
 	)
 	if err != nil {
 		log.Printf("error subscribing to moves: %v", err)
+		return
+	}
+
+	err = pubsub.SubscribeJSON(
+		conn,
+		routing.ExchangePerilTopic,
+		"war",
+		"war.*",
+		pubsub.Durable,
+		handlerWar(gameState),
+	)
+	if err != nil {
+		log.Printf("error subscribing to wars: %v", err)
 		return
 	}
 
@@ -80,7 +93,7 @@ func main() {
 		if len(words) == 0 {
 			continue
 		}
-		
+
 		switch words[0] {
 		case "spawn":
 			err = gameState.CommandSpawn(words)
