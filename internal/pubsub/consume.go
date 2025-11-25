@@ -8,10 +8,17 @@ import (
 )
 
 type SimpleQueueType int
+type Acktype int
 
 const (
 	Durable SimpleQueueType = iota
 	Transient
+)
+
+const (
+	Ack Acktype = iota
+	NackRequeue
+	NackDiscard
 )
 
 func DeclareAndBind(
@@ -38,7 +45,16 @@ func DeclareAndBind(
 		exclusive = true
 	}
 
-	queue, err := subCh.QueueDeclare(queueName, durableBool, autoDelete, exclusive, false, nil)
+	queue, err := subCh.QueueDeclare(
+		queueName, 
+		durableBool, 
+		autoDelete, 
+		exclusive, 
+		false,
+		amqp.Table{
+			"x-dead-letter-exchange": "peril_dlx",
+		},
+	)
 	if err != nil {
 		return nil, amqp.Queue{}, err
 	}
@@ -57,7 +73,7 @@ func SubscribeJSON[T any](
 	queueName,
 	key string,
 	queueType SimpleQueueType, // an enum to represent "durable" or "transient"
-	handler func(T),
+	handler func(T) Acktype,
 ) error {
 	subCh, queue, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
 	if err != nil {
@@ -77,12 +93,18 @@ func SubscribeJSON[T any](
 				log.Printf("error unmarshalling message")
 				return
 			}
-			handler(t)
-			val.Ack(false)
+			ackType := handler(t)
+			switch ackType {
+			case Ack:
+				val.Ack(false)
+			case NackRequeue:
+				val.Nack(false, true)
+			case NackDiscard:
+				val.Nack(false, false)
+			}
+
 		}
 	}()
 
 	return nil
 }
-
-
