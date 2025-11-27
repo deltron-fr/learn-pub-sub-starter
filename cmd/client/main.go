@@ -81,7 +81,7 @@ func main() {
 		"war",
 		"war.*",
 		pubsub.Durable,
-		handlerWar(gameState),
+		handlerWar(gameState, rmqCh),
 	)
 	if err != nil {
 		log.Printf("error subscribing to wars: %v", err)
