@@ -28,9 +28,22 @@ func main() {
 		return
 	}
 
-	_, _, err = pubsub.DeclareAndBind(conn, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.Durable)
+	_, gameLogQueue, err := pubsub.DeclareAndBind(conn, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.Durable)
 	if err != nil {
 		log.Printf("could not create bind topic exchange: %v", err)
+		return
+	}
+
+	err = pubsub.SubscribeGob(
+		conn,
+		routing.ExchangePerilTopic,
+		gameLogQueue.Name,
+		routing.GameLogSlug+".*",
+		pubsub.Durable,
+		handlerLogs(),
+	)
+	if err != nil {
+		log.Printf("error with Gob subscribe: %v", err)
 		return
 	}
 

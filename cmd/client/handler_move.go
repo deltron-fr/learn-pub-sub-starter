@@ -10,8 +10,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-
-
 func handlerMove(gs *gamelogic.GameState, ch *amqp.Channel) func(gamelogic.ArmyMove) pubsub.Acktype {
 	return func(mv gamelogic.ArmyMove) pubsub.Acktype {
 		defer fmt.Print("> ")
@@ -19,7 +17,7 @@ func handlerMove(gs *gamelogic.GameState, ch *amqp.Channel) func(gamelogic.ArmyM
 		mvOutcome := gs.HandleMove(mv)
 		switch mvOutcome {
 		case gamelogic.MoveOutcomeSamePlayer:
-			return  pubsub.NackDiscard
+			return pubsub.NackDiscard
 		case gamelogic.MoveOutComeSafe:
 			return pubsub.Ack
 		case gamelogic.MoveOutcomeMakeWar:
@@ -44,4 +42,3 @@ func handlerMove(gs *gamelogic.GameState, ch *amqp.Channel) func(gamelogic.ArmyM
 		}
 	}
 }
-

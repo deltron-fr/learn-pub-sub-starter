@@ -8,8 +8,6 @@ import (
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 )
 
-
-
 func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) pubsub.Acktype {
 	return func(ps routing.PlayingState) pubsub.Acktype {
 		defer fmt.Print("> ")

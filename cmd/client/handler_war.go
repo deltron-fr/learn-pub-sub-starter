@@ -12,8 +12,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-
-
 func handlerWar(gs *gamelogic.GameState, ch *amqp.Channel) func(gamelogic.RecognitionOfWar) pubsub.Acktype {
 	return func(rw gamelogic.RecognitionOfWar) pubsub.Acktype {
 		defer fmt.Print("> ")
@@ -58,8 +56,8 @@ func handlerWar(gs *gamelogic.GameState, ch *amqp.Channel) func(gamelogic.Recogn
 func pubGameLog(ch *amqp.Channel, rw gamelogic.RecognitionOfWar, msg string) error {
 	gameLog := routing.GameLog{
 		CurrentTime: time.Now(),
-		Message: msg,
-		Username: rw.Attacker.Username,
+		Message:     msg,
+		Username:    rw.Attacker.Username,
 	}
 
 	err := pubsub.PublishGob(
