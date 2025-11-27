@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
@@ -123,7 +125,37 @@ func main() {
 		case "help":
 			gamelogic.PrintClientHelp()
 		case "spam":
-			fmt.Println("Spamming not allowed yet!")
+			if len(words) != 2 {
+				fmt.Println("Invalid command. Usage: spam <count: int>")
+				continue
+			}
+
+			intWord, err := strconv.Atoi(words[1])
+			if err != nil {
+				fmt.Println("Invalid input. Spam argument should be an integer.")
+				continue
+			}
+
+			for i := 0; i < intWord; i++ {
+				mLog := gamelogic.GetMaliciousLog()
+				gameLog := routing.GameLog{
+					CurrentTime: time.Now(),
+					Message: mLog,
+					Username: userName,
+				}
+
+				err := pubsub.PublishGob(
+					rmqCh,
+					routing.ExchangePerilTopic,
+					routing.GameLogSlug+"."+userName,
+					gameLog,
+				)
+
+				if err != nil {
+					log.Printf("error publishing malformed log message: %v", err)
+					return
+				}
+			}
 		case "quit":
 			gamelogic.PrintQuit()
 			os.Exit(0)

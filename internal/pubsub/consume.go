@@ -82,6 +82,11 @@ func SubscribeJSON[T any](
 		return err
 	}
 
+	err = subCh.Qos(10, 0, false)
+	if err != nil {
+		return err
+	}
+	
 	ch, err := subCh.Consume(queue.Name, "", false, false, false, false, nil)
 	if err != nil {
 		return err
